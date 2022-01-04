@@ -1,0 +1,280 @@
+---
+title: "Study of How People Donates"
+---
+
+```{r setup, include=FALSE}
+##install.packages("formatR")
+library(tidyverse)
+library(formattable)
+library(MASS)
+library(ggplot2)
+library(formatR)
+library(tinytex)
+knitr::opts_chunk$set(echo = FALSE, eval=F, tidy=TRUE, tidy.opts=list(width.cutoff=80))
+```
+
+***
+
+\newpage
+\begin{center}
+\title{\Large{\textbf{Abstract}}}
+
+In this project, I aim to find the relationship between age, sex and income of people with donation amount. We use a sample of 94 donors to evaluate the relationship and test the hypothesis for the population with $95\%$ confidence. Using both parametric and non-parametric hypotheses tests, we find that age and income of people affect how they donates whereas sex has no effect on donation amount. Particularly, we find a weak negative linear relationship between age and donation amount whereas strong positive relationship between income and donation amount. Overall, the study reflects the image of modern day society where people with more income and working age intends to donate more whereas gender based donation is limited to a story.
+
+\end{center}
+\title{\Large{\textbf{Introduction}}}
+Donation is an emotional process of helping the needy one with the excess things or objects people have. Donation can be in the form of material things like clothes, books, etc or in the form of monetary values like money, gold, etc. It is interesting to see how different categories of people donates. For instance, in this project we are interested in understanding how people donates according to their gender and age group. Specifically, how male/female and old/young donates based on their income level.
+\vspace{1pt}
+
+There is a myth that females spend less money than male and people grow more generous with their age. On the other hand, I also hear that generosity is not determined by an individual income. One who earns a lot may not be kind enough to donate than the one whose income is less. Hence, our motivation is to statistically observe this general belief (null hypothesis) and collect sufficient statistical evidence to conclude against it. For this purpose, I are using different statistical methods over our collected sample of 94 donors.
+\vspace{1pt}
+
+For this project I are using two categorical variable age and gender, and two quantitative variable age and income to look for the answers of the following questions. I have used age as both categorical variable (young and old) as well as quantitative variable (age of a person) in order to understand the stigma of people grow more generous with their age in a better way.
+
+\title{\Large{\textbf{Methodology}}}
+We divide the whole project into three subsections. In the first subsection, we look forward to find the the answer of relationship between age and donation amount. I have designated two inquiry question for this subsection and  use two-sample t-test and correlation analysis to find the answers of these inquiries. Similarly, in the next subsection,  seek an answer to a taboo that female donates less. Again we designate two inquiry to solve this enigma and we use Chi-squared test and Wilcoxon Sign-test along with Welch two-sample test to look for the answer. At last, I am looking for affect of income on donation amount together with affects from age and sex. We designate the last two inquiry questions and are using one way ANOVA and regression analysis to understand these affects. We will perform all of our analysis on a free software R studio.
+All of these analyses are done over a collected sample of 94 donors where I have income of the donors, age of the donors and donation amount as quantitative variable, and gender of the donors (male and female) and age of the donors (young and old) as qualitative variables. 
+
+\title{\Large{\textbf{Inquiries}}}
+1. Is age a categorical factor that determines how people donate?
+\vspace{1pt}
+2. If the answer is yes in Q.1, How does age effects the donation amount? Is the relationship linear? Can we interpolate donation amount of other ages based on the relationship?
+\vspace{1pt}
+3. Is sex and donation amount associated? 
+\vspace{1pt}
+4. Is the normal belief that female donates less true? Can we verify the result with both parametric and non-parametric test?
+\vspace{1pt}
+5. Is there any relation among multiple (more than two) income levels and donation amount?
+\vspace{1pt}
+6. Can we evaluate a prediction equation for donation amount as a function of income, age, and sex? How accurate is the slope of these prediction equations? 
+
+\title{\Large{\textbf{Analysis}}}
+
+Our sample has four variables: income, sex, age and amount. The summary of these variables is as following:
+
+```{r, eval=T}
+donor <- read.csv("donors.csv")
+donors <- subset(donor, select = -c(time))
+summary(donors)
+```
+\vspace{1pt}
+**1. Under the Null hypothesis that Donation amount increases with the age, we want to test the relationship between donation amount of young(<50) and old(>50) with 95% confidence.**
+
+```{r}
+donors <- read.csv("donors.csv")
+```
+
+
+```{r}
+Donation_amount_older <- donors$amount[donors$age>50]
+Donation_amount_older
+```
+
+```{r}
+Donation_amount_younger <- donors$amount[donors$age<50]
+Donation_amount_younger
+```
+
+Since this is not a paired data and we do not have any information about population variances, we use two-sample t-test for the given data set.
+
+```{r}
+t.test(Donation_amount_older, Donation_amount_younger,  var.equal=F, alpha=.05, alternative = "less") 
+```
+
+The $t-statistics$ for this test is -1.9912 and $p-value$ is 0.0248. Since the $p-value<alpha$, we reject the null hypothesis. Thus, we have sufficient evidence to conclude that the donation amount doesn't increase with age. In other word, our finding is donation amount decreases with age.
+
+**2. We want to compute the Correlation coefficient between age and donation amount and perform the regression analysis to interpolate the donation amount of other ages within the range of our sample.**
+
+Since we  have sufficient evidence to conclude that the donation amount doesn't increase with age, we want to observe the linear relationship between donation amount and age. For that, we calculate Pearson's correlation coefficient. 
+
+```{r}
+cor(donors$age,donors$amount)
+
+```
+
+We find the correlation coefficient is -0.154 which represents a weak negative correlation between age and donation amount. Although we find that the donation amount decreases with age, the correlation between donation amount and age is very weak (almost zero). To validate furthur if the result of our sample is applicable to the population, we want to test it against the null hypothesis that correlation coefficient of population is 0 with 95\% confidence.
+
+```{r}
+cor.test(donors$age,donors$amount)
+```
+
+The $t-statistics$ for the test is -1.4966 and $p-value$ is 0.1379. Since the $p-value>alpha$, we fail to reject the null hypothesis. Thus, we don't have sufficient evidence to conclude that the there is no correlation between age and donation amount. 
+\vspace{1pt}
+To visualize the weak negative relationship between age and donation amount, we plot a scatterplot between age and donation amount.
+
+```{r, eval=T}
+plot(donors$age, donors$amount, main="Donation amount with Age", 
+   xlab="Age ", ylab="Donation amount ", pch=19)
+abline(lm(donors$amount~donors$age), col="red")
+```
+
+
+**3. Under the null hypothesis that the sex and donation amount are associated, we want to test against the hypothesis with 95% confidence.**
+
+We divide our sample into two donation amount groups: lower(<150) and higher(>150). Among the sample of donors, we want to find whether the donation amount and sex are independent. We make a contingency table of income level with sex as follows:
+
+```{r}
+lower_female <- donors$income[donors$amount<150 & donors$sex=="female"]
+length(lower_female)
+```
+
+```{r}
+lower_male <- donors$income[donors$amount<150 & donors$sex=="male"]
+length(lower_male)
+```
+
+```{r}
+upper_female <- donors$income[donors$amount>150 & donors$sex=="female"]
+length(upper_female)
+```
+
+```{r}
+upper_male <-donors$income[donors$amount>150 & donors$sex=="male"]
+length(upper_male)
+```
+
+```{r, eval=T}
+Donation_Sex<- c("Lower", "Higher", "Total")
+Female<- c("31", "24","55")
+Male<- c("28", "11","39")
+Total<- c("59", "35", "94")
+test_tbl<- data.frame(Donation_Sex, Female, Male,Total)
+  
+
+knitr::kable(test_tbl, "pipe")
+```
+
+```{r}
+observed <- matrix(c(31, 24, 28, 11),nrow=2)
+observed
+```
+
+```{r}
+chisq.test(observed, correct=F)
+```
+The Chi-squared value is 2.3251 and $p-value$ is 0.1273. Since $p-value>\alpha$, we fail to reject null hypothesis. Thus, we do not have sufficient evidence to conclude that sex and donation amount are associated.
+
+**4. Under the Null hypothesis that female donates less, we want to test the relationship between donation amount of male and female with 95% confidence.**
+
+Before beginning the hypothesis testing, we summarize the male and female donation amount using boxplot as follows:
+```{r, eval=T, fig.align = 'center'}
+boxplot(donors$amount ~ donors$sex, main="Donation amount with Sex", 
+   xlab="Sex ", ylab="Donation amount")
+abline(h=mean(donors$amount), col=2)
+```
+
+From this boxplot, we find that the median donation amount of female is more than donation amount of male. Also, median donation amount of female is close to the mean donation amount as shwon by red line.
+
+\vspace{1pt}
+
+Now, we test our claim against null hypothesis that the median difference between donation amount by female and male is same using Wilcoxon signed rank test.
+
+```{r}
+wilcox.test(donors$amount[donors$sex=="female"], donors$amount[donors$sex=="male"], paired=F, exact=F, correct=F)
+```
+The smallest sum for the test is 1203 and the $p-value$ is 0.3166. Since, $p-value>\alpha$, we fail to reject null hypothesis. Thus, we don't have sufficient evidence to conclude that the median difference between male and female donation amount is differet.
+
+\vspace{1pt}
+
+In order to furthur robust our hypothesis test, we test against the null hypothesis that female and male donates equally using t-test.
+
+```{r}
+t.test(donors$amount[donors$sex=="female"], donors$amount[donors$sex=="male"],  var.equal=F, alpha=.05, alternative = "two.sided") 
+```
+
+The $t-statistics$ for the test is 0.18226 and the $p-value$ is 0.8559. Since the $p-value>alpha$, we fail to reject the null hypothesis. Thus, we don't have sufficient evidence to conclude that the mean difference in donation amount between male and female is different.
+
+\vspace{1pt}
+
+From both Wilcoxon rank test and Welch two-sample test we find that there is no significant difference between donation amount of male and female.
+
+**5. Under the null hypothesis that the mean donation amount of different income levels are same, we want to use ANOVA test to claim against this hypothesis.**
+
+For this test, we divide our sample into three income levels: low(<75000), medium(75000-100000) and high(>100000). After that, we use ANOVA to compare mean donation amount of different income levels and test if at least on of them is different.
+
+```{r}
+low <- donors$amount[donors$income<75000]
+low
+```
+```{r}
+medium <- donors$amount[donors$income<100000 & donors$income>75000]
+medium
+```
+
+```{r}
+high <- donors$amount[donors$income>100000]
+high
+```
+
+
+```{r}
+m <- aov(donors$amount ~ Income_level)
+anova(m)
+```
+
+The F-value using ANOVA test is 1.3817 and $p-value$ is 0.02428. Since $p-value>\alpha$, we reject null hypothesis. Thus, we have sufficient evidence to conclude that at least one of the mean donation amount is different. 
+
+
+**6. At last, we want to compute a prediction equation for donation amount as a function of income, age and sex and interpolate the result for different age and sex within the range of our sample.**
+
+We model a system where donation amount is an independent variable depending on other dependent variables income, age and sex.
+```{r}
+x <- donors$income
+y <- donors$amount
+a <- donors$age
+s <- donors$sex
+Model_2 <- lm(y~x+a+s)
+summary(Model_2)
+anova(Model_2)
+```
+
+We find the regression equation for this model is $y = 45.66 + 0.001636 x - 1.003a + 4.913s$ where variables y, x, a and s are donation amount, income, age and sex respectively.
+\vspace{1pt}
+The $95\%$ confidence interval for each of the slope values are:- Income: (0.00150421, 0.001767707), Age: (-1.466510751, -0.538511895) and Sex:(-3.429511180 13.255492157). 
+\vspace{1pt}
+Based on our model, we test the hypothesis that $H_0:\beta_1=0$  versus $H_1:\beta_1 \ne 0$ at the $\alpha=0.05$ significance level for each slope value and find the $p-value$ for slope of the income, sex and age to be 2.2e-16, 1.626e-05 and 0.2451 respectively. The $p-value$ for income and age slope is less than $alpha$ whereas that of sex is greater than $\alpha$. Thus, we have sufficient evidence to conclude $\beta_l \neq 0$ for income and age but we do not have sufficient evidence to conclude $\beta_l \neq 0$ for sex.
+```{r}
+confint(Model_2, level=0.95)
+```
+
+\vspace{1pt}
+
+In order to test the regression fit of our model, we plot following plots:
+
+```{r, eval=T, fig.align = 'center'}
+x <- donors$income
+y <- donors$amount
+a <- donors$age
+s <- donors$sex
+Model_2 = lm(y~x+a+s)
+par(mfrow=c(2,2))
+plot(Model_2)
+```
+From the normal qq plot, it can be seen that the assumption regarding normality holds true.The residual plot shows a small deviation from homoscedasticity. For smaller values of x,a and s; residuals are randomly distributed about the zero residual line while they are distant from the line for higher values. So applying linear regression model in this case needs caution.
+\newpage
+\title{\Large{\textbf{Discussion}}}
+We have performed series of statistical investigation to understand how people donates based on age, sex and income. The whole investigation process is divided into three subsections: 1. Inestigation of relationship between age and donation amount, 2. Investigation of relationship between sex and donation amount and 3. Affect of income along with age and sex on donation amoount. 
+\vspace{1pt}
+In the first subsection, we use t-test to test against the null hypothesis that donation amount increases with age and we find sufficient evidence to void this claim. We also use correlation analysis to validate our result. Both of these test result a consistent output. There could be several reasoning for the it. One of the major reason could be young people being a working age group obviously earns more. The more a person earns, the more is the tendency to donate.
+\vspace{0.5pt}
+In the second subsection, we use Chi-squared test and Wilcoxon signed-test along with Welch two-sample test to test against the null hypothesis that female donates less and we find sufficient evidence to void this claim. It's surprising how both parametric and non-parametric test resulted the same result. In this modern age, female are as empowered as male both economically and in social status. This result is one of the clear illustration that the taboo of female donating less has become a story.
+\vspace{0.5pt}
+In the last subsection, we divide the whole income sample into three category: low(<75000), medium(75000-100000) and high(>100000). We use one way ANOVA test to test against the null hypothesis that donation amount of each income category is same. We collect sufficient evidence against this hypothesis. We also perform regression analysis to look for the affect of income, age and sex on donation amount. After all of the analysis we find that both income and age affects the donation amount but sex doesn't. This result is consistent with the above two analyses and an obvious result for the modern society where people with more income and working age intends to donate more and females have equal capacity to earn and donate as male.
+
+\title{\Large{\textbf{Conclusion}}}
+
+Overall, our project resulted a mirror of the modern day society that people with more income and working age intends to donate more whereas sex of a person is not a parameter anymore to distinguish the donation tendency.
+
+***
+\title{\Large{\textbf{References}}}
+\begin{thebibliography}{9}
+\bibitem{1}
+Givens, Geof H. and Hoeting, Jennifer A. \emph{Computational statistics}, John Wiley \& Sons, Hoboken, NJ, USA, 2nd ed.
+
+\bibitem{2}
+R Core Team (2021) \emph{R: A Language and Environment for Statistical Computing}, A R Foundation for Statistical Computing, Vienna, Austria, https://www.R-project.org/.
+\end{thebibliography}
+
+
+\newpage
+\title{\Large{\textbf{Appendices}}}
